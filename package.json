@@ -1,8 +1,8 @@
 {
-  "name": "nodejs-boilerplate",
+  "name": "@b2wads/mongodb-watcher",
   "version": "0.1.0",
-  "description": "Boilerplate para projetos NodeJS",
-  "main": "app.js",
+  "description": "Watch mongodb change streams and send data to RabbitMQ ",
+  "main": "index.js",
   "dependencies": {
     "@b2wads/logger": "2.0.0"
   },
@@ -38,13 +38,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com:b2wads/nodejs-boilerplate"
+    "url": "github.com:b2wads/mongodb-watcher"
   },
   "keywords": [
     "nodejs",
-    "boilerplate",
-    "webapp",
-    "worker"
+    "mongodb",
+    "rabbitmq"
   ],
   "author": "B2WADS",
   "license": "MIT"
