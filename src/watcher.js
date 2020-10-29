@@ -5,6 +5,7 @@ const AsyncPromisePool = require('async-promise-pool')
 const { MongoClient } = require('mongodb')
 
 const CollectionObserver = require('./collection-observer')
+const RabbitPublisher = require('./rabbit-publisher')
 
 module.exports = class Watcher {
   constructor({
@@ -39,13 +40,11 @@ module.exports = class Watcher {
 
     this._pool = new AsyncPromisePool({ concurrency })
 
-    this._rabbit = {
-      uri: rabbitUri,
-      connection: false,
-      channel: false,
+    this._publisher = new RabbitPublisher({
       exchange,
       routingKey,
-    }
+      uri: rabbitUri,
+    })
 
     const operationHandler = this._handleEvent.bind(this)
     operations.forEach(operation => {
@@ -66,21 +65,10 @@ module.exports = class Watcher {
     )
   }
 
-  async _initRabbit() {
-    this._rabbit.connection = await amqplib.connect(this._rabbit.uri)
-    this._rabbit.channel = await this._rabbit.connection.createChannel()
-  }
-
   _handleEvent(eventData) {
     this._notificationCounter = (this._notificationCounter + 1) % this._maxNotificationDuplicates
 
-    this._pool.add(() =>
-      this._rabbit.channel.publish(
-        this._rabbit.exchange,
-        this._rabbit.routingKey,
-        Buffer.from(JSON.stringify(eventData.fullDocument))
-      )
-    )
+    this._pool.add(() => this._publisher.publishObject(eventData.fullDocument))
 
     if (this._notificationCounter === 0) {
       // await this._updateLastWatchedId(eventData._id)
@@ -88,24 +76,13 @@ module.exports = class Watcher {
   }
 
   async start() {
-    await this._initRabbit()
+    await this._publisher.connect()
     await this._observer.start()
   }
 
   async stop() {
-    const promises = [
-      this._observer.stop()
-    ]
-
-    if (this._rabbit.channel) {
-      promises.push(
-        this._rabbit.channel
-          .close()
-          .then(() => this._rabbit.connection.close())
-      )
-    }
-
-    return Promise.all(promises)
+    await this._observer.stop()
+    await this._publisher.close()
   }
 }
 
