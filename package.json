@@ -1,0 +1,55 @@
+{
+  "name": "nodejs-boilerplate",
+  "version": "0.1.0",
+  "description": "Boilerplate para projetos NodeJS",
+  "main": "app.js",
+  "dependencies": {
+    "@b2wads/logger": "2.0.0",
+    "express": "4.17.1"
+  },
+  "devDependencies": {
+    "chai": "4.2.0",
+    "eslint": "7.11.0",
+    "eslint-config-airbnb-base": "14.2.0",
+    "eslint-config-prettier": "6.12.0",
+    "eslint-plugin-chai-friendly": "^0.6.0",
+    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-no-unsafe-regex": "1.0.0",
+    "eslint-plugin-prettier": "3.1.4",
+    "eslint-plugin-security": "1.4.0",
+    "eslint-plugin-you-dont-need-lodash-underscore": "6.10.0",
+    "mocha": "8.1.3",
+    "nyc": "15.1.0",
+    "prettier": "2.1.2",
+    "supertest": "5.0.0"
+  },
+  "scripts": {
+    "deps": "docker-compose up --build --force-recreate",
+    "eslint": "./node_modules/.bin/eslint --fix .",
+    "eslint:check": "./node_modules/.bin/eslint .",
+    "fix:<fix-name>": "node scripts/fix-<fix-name>.js",
+    "fmt": "npm run prettier && npm run eslint",
+    "fmt:check": "npm run prettier:check && npm run eslint:check",
+    "prettier": "./node_modules/.bin/prettier --write \"**/{*.js,*.json,bin/**}\"",
+    "prettier:check": "./node_modules/.bin/prettier --check \"**/{*.js,*.json,bin/**}\"",
+    "start": "node ./bin/www",
+    "test": "./node_modules/.bin/nyc mocha --reporter spec",
+    "test:coverage-report": "nyc report --reporter=text-lcov > coverage.lcov",
+    "test:acceptance": "npm t test/acceptance/*",
+    "test:integration": "npm t test/integration/*",
+    "test:unit": "npm t test/unit/*",
+    "worker:<worker-name>": "node workers/<worker-name.js>"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com:b2wads/nodejs-boilerplate"
+  },
+  "keywords": [
+    "nodejs",
+    "boilerplate",
+    "webapp",
+    "worker"
+  ],
+  "author": "B2WADS",
+  "license": "MIT"
+}
