@@ -11,9 +11,21 @@ services:
     restart: "no"
     network_mode: host
     entrypoint:
+      - /usr/bin/mongod
+      - --bind_ip_all
+      - --replSet
+      - testReplSet
+
+  setupMongo:
+    image: mongo:3.6
+    restart: "no"
+    network_mode: host
+    depends_on:
+      - mongo
+    entrypoint:
       - bash
       - -c
-      - "(sleep 10 && mongo --host mongodb://localhost:27017 --eval 'rs.initiate({_id: \"testReplSet\", members: [{ _id: 0, host: \"localhost:27017\" }]})') & /usr/bin/mongod --bind_ip_all --replSet testReplSet"
+      - "sleep 10 && mongo --host mongodb://localhost:27017 --eval 'rs.initiate({_id:\"testReplSet\",members:[{_id:0,host:\"localhost:27017\"}]})'"
 
   rabbitmq:
     image: rabbitmq:3.7-management-alpine
