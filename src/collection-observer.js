@@ -48,7 +48,7 @@ module.exports = class CollectionObserver {
     return observationState ? watchMeta.resumeToken : undefined
   }
 
-  async _saveState() {
+  async _saveState(eventData) {
     if (!this._stateCollection) return
 
     await this._stateCollection.replaceOne(

@@ -5,7 +5,7 @@ const { Watcher } = require('../../index')
 
 const waitMs = require('../helpers/wait-ms')
 
-describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
+describe('[INTEGRATION] watcher', () => {
   const rabbit = {
     uri: process.env.RABBITMQ_URI || "amqp://localhost:5672",
     queue: 'test_queue',
@@ -26,6 +26,7 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
     uri: process.env.MONGODB_URI || "mongodb://localhost:27017/?replicaSet=testReplSet",
     dbName: 'testdatabase',
     collectionName: 'testcollection',
+    stateCollectionName: 'observationstates',
   }
 
   before(async () => {
@@ -44,6 +45,7 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
 
     mongo.db = mongo.client.db(mongo.dbName)
     mongo.collection = mongo.db.collection(mongo.collectionName)
+    mongo.stateCollection = mongo.db.collection(mongo.stateCollectionName)
   })
 
   after(async () => {
@@ -67,13 +69,15 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
     ]
 
     let publishedMsgs
+    let savedState
     before(async () => {
-      const notifier = new Watcher({
+      const watcher = new Watcher({
         concurrency: docFixtures.length,
         mongo: {
           uri: mongo.uri,
           database: mongo.dbName,
           collection: mongo.collectionName,
+          stateCollection: mongo.stateCollectionName,
           operations: [ 'insert' ],
         },
         rabbit: {
@@ -82,7 +86,7 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
         }
       })
 
-      await notifier.start()
+      await watcher.start()
 
       await mongo.collection.insertMany(docFixtures)
 
@@ -90,12 +94,15 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      await notifier.stop()
+      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+
+      await watcher.stop()
     })
 
     after(async () => {
       await Promise.all([
         mongo.collection.deleteMany({}),
+        mongo.stateCollection.deleteMany({}),
         rabbit.channel.purgeQueue(rabbit.queue),
       ])
     })
@@ -110,6 +117,12 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
         field1: doc.field1,
         field2: doc.field2,
       })))
+    })
+
+    it('should correctly save observation state', () => {
+      expect(savedState).to.exist
+      expect(savedState).to.have.property('lastObservedId')
+      expect(savedState).to.have.property('resumeToken')
     })
   })
 })
