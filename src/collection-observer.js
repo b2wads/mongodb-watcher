@@ -4,8 +4,9 @@ module.exports = class CollectionObserver {
   constructor({
     database,
     collection,
-    metaCollection,
+    stateCollection,
     mongoClient,
+    maxEventDuplication,
   }) {
     this._client = mongoClient
     this._changeStream = null
@@ -13,9 +14,12 @@ module.exports = class CollectionObserver {
     this._collectionName = collection
     this._db = null
     this._dbName = database
+    this._eventsCount = 0
     this._handlers = new Map()
-    this._metaCollection = null
-    this._metaCollectionName = metaCollection
+    this._stateCollection = null
+    this._stateCollectionName = stateCollection
+    this._saveStateFrequency = maxEventDuplication
+    this._saveStateLock = new Promise(resolve => resolve(true))
   }
 
   on(operation, callback) {
@@ -28,37 +32,57 @@ module.exports = class CollectionObserver {
 
     this._db = this._client.db(this._dbName)
 
-    if (this._metaCollectionName) {
-      this._metaCollection = this._db.collection(this._metaCollectionName)
-      await this._metaCollection.ensureIndex("collection", { unique: true })
+    if (this._stateCollectionName) {
+      this._stateCollection = this._db.collection(this._stateCollectionName)
+      await this._stateCollection.ensureIndex("collection", { unique: true })
     }
 
     this._collection = this._db.collection(this._collectionName)
   }
 
-  async _getLastWatchedId() {
-    if (!this._metaCollection) return undefined
+  async _getResumeToken() {
+    if (!this._stateCollection) return undefined
 
-    const watchMeta = await this._metaCollection.findOne({ collection: this._collectionName })
+    const observationState = await this._stateCollection.findOne({ collection: this._collectionName })
 
-    return watchMeta.lastWatchedId
+    return observationState ? watchMeta.resumeToken : undefined
+  }
+
+  async _saveState() {
+    if (!this._stateCollection) return
+
+    await this._stateCollection.replaceOne(
+      { collection: this._collectionName },
+      {
+        collection: this._collectionName,
+        lastObservedId: eventData.documentKey._id,
+        resumeToken: eventData._id,
+      },
+      { upsert: true }
+    )
   }
 
   async start() {
     await this._connect()
 
-    const resumeAfter = await this._getLastWatchedId()
+    const resumeAfter = await this._getResumeToken()
 
     this._changeStream = this._collection.watch({ resumeAfter })
 
     this._changeStream.on(
       'change',
-      (eventData => {
+      (async eventData => {
+        await this._saveStateLock
+
         const operationHandler = this._handlers.get(eventData.operationType)
 
         if (!operationHandler) return
 
+        this._eventsCount = (this._eventsCount + 1) % this._saveStateFrequency
         operationHandler(eventData)
+
+        if (this._eventsCount === 0)
+          this._saveStateLock = this._saveState(eventData)
       }).bind(this)
     )
   }
@@ -70,6 +94,6 @@ module.exports = class CollectionObserver {
     this._changeStream = null
     this._collection = null
     this._db = null
-    this._metaCollection = null
+    this._stateCollection = null
   }
 }

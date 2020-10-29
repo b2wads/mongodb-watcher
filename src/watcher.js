@@ -14,7 +14,7 @@ module.exports = class Watcher {
       database,
       collection,
       connectionOptions,
-      metaCollection,
+      stateCollection,
       operations,
       uri: mongoUri,
     },
@@ -25,18 +25,16 @@ module.exports = class Watcher {
     },
   }) {
     this._operations = new Set(operations)
-    this._maxNotificationDuplicates = concurrency
 
     this._observer = new CollectionObserver({
       collection,
       database,
-      metaCollection,
+      stateCollection,
       // FIXME connecting to mongo with useUnifiedTopology: true breaks the changeStream
       mongoClient: new MongoClient(mongoUri, connectionOptions),
       operations,
+      maxEventDuplication: concurrency,
     })
-
-    this._notificationCounter = 0
 
     this._pool = new AsyncPromisePool({ concurrency })
 
@@ -52,27 +50,8 @@ module.exports = class Watcher {
     })
   }
 
-  async _updateLastWatchedId(id) {
-    if (!this._mongo.metaCollection) return
-
-    await this._mongo.metaCollection.replaceOne(
-      { collection: this._mongo.collectionName },
-      {
-        collection: this._mongo.collectionName,
-        lastWatchedId: id,
-      },
-      { upsert: true }
-    )
-  }
-
   _handleEvent(eventData) {
-    this._notificationCounter = (this._notificationCounter + 1) % this._maxNotificationDuplicates
-
     this._pool.add(() => this._publisher.publishObject(eventData.fullDocument))
-
-    if (this._notificationCounter === 0) {
-      // await this._updateLastWatchedId(eventData._id)
-    }
   }
 
   async start() {
