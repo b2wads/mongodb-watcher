@@ -39,7 +39,7 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
 
     await rabbit.channel.bindQueue(rabbit.queue, rabbit.exchange)
 
-    mongo.client = new MongoClient(mongo.uri)
+    mongo.client = new MongoClient(mongo.uri, { useUnifiedTopology: true })
     await mongo.client.connect()
 
     mongo.db = mongo.client.db(mongo.dbName)
@@ -70,12 +70,11 @@ describe.only('[INTEGRATION] workers/mongodb-notifier', () => {
     before(async () => {
       const notifier = new Watcher({
         concurrency: docFixtures.length,
-        operations: [ 'insert' ],
         mongo: {
           uri: mongo.uri,
           database: mongo.dbName,
           collection: mongo.collectionName,
-          options: {},
+          operations: [ 'insert' ],
         },
         rabbit: {
           uri: rabbit.uri,
