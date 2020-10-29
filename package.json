@@ -4,7 +4,10 @@
   "description": "Watch mongodb change streams and send data to RabbitMQ ",
   "main": "index.js",
   "dependencies": {
-    "@b2wads/logger": "2.0.0"
+    "@b2wads/logger": "2.0.0",
+    "amqplib": "^0.6.0",
+    "async-promise-pool": "^1.0.3",
+    "mongodb": "^3.6.2"
   },
   "devDependencies": {
     "chai": "4.2.0",
