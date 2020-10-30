@@ -30,6 +30,21 @@ describe('[INTEGRATION] watcher', () => {
     stateCollectionName: 'observationstates',
   }
 
+  const defaultWatcherConfig = {
+    concurrency: 1,
+    mongo: {
+      uri: mongo.uri,
+      database: mongo.dbName,
+      collection: mongo.collectionName,
+      stateCollection: mongo.stateCollectionName,
+      operations: ['insert'],
+    },
+    rabbit: {
+      uri: rabbit.uri,
+      exchange: rabbit.exchange,
+    }
+  }
+
   before(async () => {
     rabbit.conn = await amqplib.connect(rabbit.uri)
     rabbit.channel = await rabbit.conn.createChannel()
@@ -78,18 +93,8 @@ describe('[INTEGRATION] watcher', () => {
     let savedState
     before(async () => {
       const watcher = new Watcher({
+        ...defaultWatcherConfig,
         concurrency: docFixtures.length,
-        mongo: {
-          uri: mongo.uri,
-          database: mongo.dbName,
-          collection: mongo.collectionName,
-          stateCollection: mongo.stateCollectionName,
-          operations: ['insert'],
-        },
-        rabbit: {
-          uri: rabbit.uri,
-          exchange: rabbit.exchange,
-        },
       })
 
       await watcher.start()
@@ -141,18 +146,11 @@ describe('[INTEGRATION] watcher', () => {
 
     before(async () => {
       const watcher = new Watcher({
-        concurrency: 1,
+        ...defaultWatcherConfig,
         mongo: {
-          uri: mongo.uri,
-          database: mongo.dbName,
-          collection: mongo.collectionName,
-          stateCollection: mongo.stateCollectionName,
+          ...defaultWatcherConfig.mongo,
           operations: ['update'],
-        },
-        rabbit: {
-          uri: rabbit.uri,
-          exchange: rabbit.exchange,
-        },
+        }
       })
 
       await watcher.start()
@@ -192,6 +190,19 @@ describe('[INTEGRATION] watcher', () => {
     })
   })
 
+  // describe('when listening only for delete operations', () => {
+  //   const docFixture = { field1: 'test-1', field2: 'test-2' }
+
+  //   let publishedMsgs
+  //   let savedState
+
+  //   before(async () => {
+  //     const watcher = new Watcher({
+
+  //     })
+  //   })
+  // })
+
   describe('when resuming watch after a failure', () => {
     const docFixtures = [
       { field1: 'test-1', field2: 'test-2' },
@@ -202,23 +213,11 @@ describe('[INTEGRATION] watcher', () => {
 
     let publishedMsgs
 
-    const watcherConstructorArgs = {
-      concurrency: 2,
-      mongo: {
-        uri: mongo.uri,
-        database: mongo.dbName,
-        collection: mongo.collectionName,
-        stateCollection: mongo.stateCollectionName,
-        operations: ['insert'],
-      },
-      rabbit: {
-        uri: rabbit.uri,
-        exchange: rabbit.exchange,
-      },
-    }
-
     before(async () => {
-      const watcher = new Watcher(watcherConstructorArgs)
+      const watcher = new Watcher({
+        ...defaultWatcherConfig,
+        concurrency: 2,
+      })
 
       await watcher.start()
 
@@ -228,7 +227,6 @@ describe('[INTEGRATION] watcher', () => {
       await waitMs(250)
       // simulate failure
       await watcher.stop()
-      watcher._client = new MongoClient({})
 
       // documents inserted while watcher is down
       const lastDocs = docFixtures.slice(2, docFixtures.length)
