@@ -60,7 +60,7 @@ module.exports = class CollectionObserver {
     const resumeAfter = await this._getResumeToken()
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename
-    this._changeStream = this._collection.watch({ resumeAfter })
+    this._changeStream = this._collection.watch({ resumeAfter, fullDocument: 'updateLookup' })
 
     this._changeStream.on('change', async (eventData) => {
       await this._saveStateLock

@@ -125,4 +125,78 @@ describe('[INTEGRATION] watcher', () => {
       expect(savedState).to.have.property('resumeToken')
     })
   })
+
+  describe('when listening only for update operations', () => {
+    const originalFixture = {
+      field1: 'test-1',
+      field2: 'test-2',
+    }
+
+    const updateFixture = {
+      field2: 'test-3',
+    }
+
+    let publishedMsgs
+    let savedState
+
+    before(async () => {
+      const watcher = new Watcher({
+        concurrency: 1,
+        mongo: {
+          uri: mongo.uri,
+          database: mongo.dbName,
+          collection: mongo.collectionName,
+          stateCollection: mongo.stateCollectionName,
+          operations: ['update'],
+        },
+        rabbit: {
+          uri: rabbit.uri,
+          exchange: rabbit.exchange,
+        },
+      })
+
+      await watcher.start()
+
+      await mongo.collection.insertOne(originalFixture)
+
+      await mongo.collection.findOneAndUpdate({ _id: originalFixture._id }, { $set: updateFixture })
+
+      await waitMs(250)
+
+      publishedMsgs = await rabbit.getMessages()
+
+      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+
+      await watcher.stop()
+    })
+
+    after(async () => {
+      await Promise.all([
+        mongo.collection.deleteMany({}),
+        mongo.stateCollection.deleteMany({}),
+        rabbit.channel.purgeQueue(rabbit.queue),
+      ])
+    })
+
+    it('should only publish update event', () => {
+      expect(publishedMsgs).to.have.lengthOf(1)
+    })
+
+    it('should publish updated document to rabbit', () => {
+      expect(publishedMsgs).to.deep.equal([
+        {
+          ...originalFixture,
+          ...updateFixture,
+          _id: originalFixture._id.toHexString(),
+        },
+      ])
+    })
+
+    it('should correctly save observation state', () => {
+      expect(savedState).to.exist
+      expect(savedState).to.have.property('lastObservedId')
+      expect(savedState.lastObservedId.toHexString()).to.be.equal(originalFixture._id.toHexString())
+      expect(savedState).to.have.property('resumeToken')
+    })
+  })
 })
