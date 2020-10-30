@@ -4,11 +4,6 @@ orbs:
   node: circleci/node@4.1.0
 
 commands:
-  setup-package:
-    steps:
-      - checkout
-      - node/install-packages
-
   upload-coverage-report:
     steps:
       - run:
@@ -25,41 +20,44 @@ jobs:
       tag: <<parameters.nodeVersionTag>>
 
     steps:
-      - setup-package
+      - checkout
+      - node/install-packages
       - run:
           command: npm run fmt:check
 
   all-tests:
     parameters:
-      nodeVersionTag:
+      node-version:
         type: string
 
-    executor:
-      name: node/default
-      tag: <<parameters.nodeVersionTag>>
+    machine:
+      image: ubuntu-2004:202010-01
 
-    steps:
-      - setup-package
-      - run:
-          command: npm run deps:detached && sleep 10
-      - run:
-          command: npm run test:coverage-report
-      - upload-coverage-report
+      steps:
+        - checkout
+        - node/install:
+            node-version: <<parameters.node-version>>
+        - node/install-packages
+        - run:
+            command: npm run deps:detached && sleep 10
+        - run:
+            command: npm run test:coverage-report
+        - upload-coverage-report
 
 workflows:
   required-checks:
     jobs:
       - fmt-check:
           name: fmt-check
-          nodeVersionTag: "12.18"
+          node-version: "12.18.0"
 
       - all-tests:
           name: tests-node-12
-          nodeVersionTag: "12.18"
+          node-version: "12.18.0"
 
   optional-checks:
     jobs:
       - all-tests:
           name: tests-node-lts
-          nodeVersionTag: lts
+          node-version: lts
 
