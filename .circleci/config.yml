@@ -63,5 +63,5 @@ workflows:
     jobs:
       - all-tests:
           name: tests-node-lts
-          node-version: lts/*
+          node-version: "lts/*"
 
