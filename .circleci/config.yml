@@ -35,6 +35,9 @@ jobs:
 
     steps:
       - checkout
+      - node/install:
+          node-version: <<parameters.node-version>>
+          install-npm: false
       - run:
           command: nvm use
       - node/install-packages
