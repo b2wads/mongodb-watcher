@@ -13,8 +13,6 @@ module.exports = class Watcher {
     mongo: { database, collection, connectionOptions, stateCollection, operations, uri: mongoUri },
     rabbit: { uri: rabbitUri, exchange, routingKey },
   }) {
-    this._operations = new Set(operations)
-
     this._observer = new CollectionObserver({
       collection,
       connectionOptions,
