@@ -36,6 +36,11 @@ commands:
             apk add bash curl
             wget -O codecov_bash https://codecov.io/bash
             bash codecov_bash
+  run-deps:
+    description: Levanta dependencias para testes
+    steps:
+      - run:
+          command: npm run deps
 
 jobs:
   build:
@@ -70,6 +75,7 @@ jobs:
       - checkout
       - install-deps
       - format-check
+      - run-deps
       - all-tests
       - when:
           condition: <<parameters.coverage>>
@@ -107,7 +113,7 @@ jobs:
           <<: *build-template
           step-name: Pushing to registry
           tag: << parameters.image-tag >>
-  
+
   notify-build-status:
     description: Envia uma mensagem na página do PR com informações do build
     parameters:
@@ -159,8 +165,8 @@ workflows:
           context: docker-registry-auth
           image: node:12.19.0-alpine
           name: node-12
-      
-      # Remova os comentário abaixo se quiser realizar build 
+
+      # Remova os comentário abaixo se quiser realizar build
       # de uma imagem staging do repositório
 
       # - build-image: &build-template
@@ -184,7 +190,7 @@ workflows:
       #     requires:
       #       - build-staging
 
-      # Remova os comentário abaixo se quiser realizar build 
+      # Remova os comentário abaixo se quiser realizar build
       # de de imagem latest e tag quando mergear para master
 
       # - build-image:
