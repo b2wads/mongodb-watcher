@@ -1,13 +1,5 @@
-const { ObjectID } = require('mongodb')
-
 module.exports = class CollectionObserver {
-  constructor({
-    database,
-    collection,
-    stateCollection,
-    mongoClient,
-    maxEventDuplication,
-  }) {
+  constructor({ database, collection, stateCollection, mongoClient, maxEventDuplication }) {
     this._client = mongoClient
     this._changeStream = null
     this._collection = null
@@ -19,7 +11,7 @@ module.exports = class CollectionObserver {
     this._stateCollection = null
     this._stateCollectionName = stateCollection
     this._saveStateFrequency = maxEventDuplication
-    this._saveStateLock = new Promise(resolve => resolve(true))
+    this._saveStateLock = new Promise((resolve) => resolve(true))
   }
 
   on(operation, callback) {
@@ -34,7 +26,7 @@ module.exports = class CollectionObserver {
 
     if (this._stateCollectionName) {
       this._stateCollection = this._db.collection(this._stateCollectionName)
-      await this._stateCollection.ensureIndex("collection", { unique: true })
+      await this._stateCollection.ensureIndex('collection', { unique: true })
     }
 
     this._collection = this._db.collection(this._collectionName)
@@ -45,7 +37,7 @@ module.exports = class CollectionObserver {
 
     const observationState = await this._stateCollection.findOne({ collection: this._collectionName })
 
-    return observationState ? watchMeta.resumeToken : undefined
+    return observationState ? observationState.resumeToken : undefined
   }
 
   async _saveState(eventData) {
@@ -67,24 +59,21 @@ module.exports = class CollectionObserver {
 
     const resumeAfter = await this._getResumeToken()
 
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     this._changeStream = this._collection.watch({ resumeAfter })
 
-    this._changeStream.on(
-      'change',
-      (async eventData => {
-        await this._saveStateLock
+    this._changeStream.on('change', async (eventData) => {
+      await this._saveStateLock
 
-        const operationHandler = this._handlers.get(eventData.operationType)
+      const operationHandler = this._handlers.get(eventData.operationType)
 
-        if (!operationHandler) return
+      if (!operationHandler) return
 
-        this._eventsCount = (this._eventsCount + 1) % this._saveStateFrequency
-        operationHandler(eventData)
+      this._eventsCount = (this._eventsCount + 1) % this._saveStateFrequency
+      operationHandler(eventData)
 
-        if (this._eventsCount === 0)
-          this._saveStateLock = this._saveState(eventData)
-      }).bind(this)
-    )
+      if (this._eventsCount === 0) this._saveStateLock = this._saveState(eventData)
+    })
   }
 
   async stop() {

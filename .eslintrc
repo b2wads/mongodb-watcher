@@ -35,5 +35,16 @@
     ],
     "no-continue": "off",
     "no-await-in-loop": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.spec.js"],
+      "rules": {
+        "no-unused-expressions": "off"
+      },
+      "env": {
+        "mocha": true
+      }
+    }
+  ]
 }

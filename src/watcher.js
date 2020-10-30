@@ -1,6 +1,3 @@
-// TODO move this to separate NPM package
-
-const amqplib = require('amqplib')
 const AsyncPromisePool = require('async-promise-pool')
 const { MongoClient } = require('mongodb')
 
@@ -10,19 +7,8 @@ const RabbitPublisher = require('./rabbit-publisher')
 module.exports = class Watcher {
   constructor({
     concurrency,
-    mongo: {
-      database,
-      collection,
-      connectionOptions,
-      stateCollection,
-      operations,
-      uri: mongoUri,
-    },
-    rabbit: {
-      uri: rabbitUri,
-      exchange,
-      routingKey,
-    },
+    mongo: { database, collection, connectionOptions, stateCollection, operations, uri: mongoUri },
+    rabbit: { uri: rabbitUri, exchange, routingKey },
   }) {
     this._operations = new Set(operations)
 
@@ -45,7 +31,7 @@ module.exports = class Watcher {
     })
 
     const operationHandler = this._handleEvent.bind(this)
-    operations.forEach(operation => {
+    operations.forEach((operation) => {
       this._observer.on(operation, operationHandler)
     })
   }
@@ -64,4 +50,3 @@ module.exports = class Watcher {
     await this._publisher.close()
   }
 }
-

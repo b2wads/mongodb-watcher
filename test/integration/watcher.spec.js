@@ -1,4 +1,5 @@
 const amqplib = require('amqplib')
+const { expect } = require('chai')
 const { MongoClient } = require('mongodb')
 
 const { Watcher } = require('../../index')
@@ -7,7 +8,7 @@ const waitMs = require('../helpers/wait-ms')
 
 describe('[INTEGRATION] watcher', () => {
   const rabbit = {
-    uri: process.env.RABBITMQ_URI || "amqp://localhost:5672",
+    uri: process.env.RABBITMQ_URI || 'amqp://localhost:5672',
     queue: 'test_queue',
     exchange: 'test_exchange',
 
@@ -15,15 +16,15 @@ describe('[INTEGRATION] watcher', () => {
       const msgs = []
       let msg
 
-      while (msg = await this.channel.get(this.queue, { noAck: true }))
-        msgs.push(JSON.parse(msg.content.toString()))
+      // eslint-disable-next-line no-cond-assign
+      while ((msg = await this.channel.get(this.queue, { noAck: true }))) msgs.push(JSON.parse(msg.content.toString()))
 
       return msgs
     },
   }
 
   const mongo = {
-    uri: process.env.MONGODB_URI || "mongodb://localhost:27017/?replicaSet=testReplSet",
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/?replicaSet=testReplSet',
     dbName: 'testdatabase',
     collectionName: 'testcollection',
     stateCollectionName: 'observationstates',
@@ -35,7 +36,7 @@ describe('[INTEGRATION] watcher', () => {
 
     await Promise.all([
       rabbit.channel.assertQueue(rabbit.queue),
-      rabbit.channel.assertExchange(rabbit.exchange, 'fanout')
+      rabbit.channel.assertExchange(rabbit.exchange, 'fanout'),
     ])
 
     await rabbit.channel.bindQueue(rabbit.queue, rabbit.exchange)
@@ -51,10 +52,7 @@ describe('[INTEGRATION] watcher', () => {
   after(async () => {
     await rabbit.channel.unbindQueue(rabbit.queue, rabbit.exchange)
 
-    await Promise.all([
-      rabbit.channel.deleteQueue(rabbit.queue),
-      rabbit.channel.deleteExchange(rabbit.exchange)
-    ])
+    await Promise.all([rabbit.channel.deleteQueue(rabbit.queue), rabbit.channel.deleteExchange(rabbit.exchange)])
 
     await rabbit.channel.close()
     await rabbit.conn.close()
@@ -65,7 +63,7 @@ describe('[INTEGRATION] watcher', () => {
   describe('when listening only for insert operations', () => {
     const docFixtures = [
       { field1: 'test-1', field2: 'test-2' },
-      { field1: 'test-3', field2: 'test-4' }
+      { field1: 'test-3', field2: 'test-4' },
     ]
 
     let publishedMsgs
@@ -78,12 +76,12 @@ describe('[INTEGRATION] watcher', () => {
           database: mongo.dbName,
           collection: mongo.collectionName,
           stateCollection: mongo.stateCollectionName,
-          operations: [ 'insert' ],
+          operations: ['insert'],
         },
         rabbit: {
           uri: rabbit.uri,
           exchange: rabbit.exchange,
-        }
+        },
       })
 
       await watcher.start()
@@ -112,11 +110,13 @@ describe('[INTEGRATION] watcher', () => {
     })
 
     it('should publish correct information to rabbit', () => {
-      expect(publishedMsgs).to.have.deep.members(docFixtures.map(doc => ({
-        _id: doc._id.toHexString(),
-        field1: doc.field1,
-        field2: doc.field2,
-      })))
+      expect(publishedMsgs).to.have.deep.members(
+        docFixtures.map((doc) => ({
+          _id: doc._id.toHexString(),
+          field1: doc.field1,
+          field2: doc.field2,
+        }))
+      )
     })
 
     it('should correctly save observation state', () => {

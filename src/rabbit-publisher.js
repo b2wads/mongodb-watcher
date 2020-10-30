@@ -1,11 +1,7 @@
 const amqplib = require('amqplib')
 
 module.exports = class RabbitPublisher {
-  constructor({
-    exchange,
-    routingKey,
-    uri,
-  }) {
+  constructor({ exchange, routingKey, uri }) {
     this._channel = null
     this._connection = null
     this._exchange = exchange
@@ -30,4 +26,3 @@ module.exports = class RabbitPublisher {
     return this._channel.publish(this._exchange, this._routingKey, Buffer.from(JSON.stringify(obj)))
   }
 }
-
