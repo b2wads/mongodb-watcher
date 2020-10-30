@@ -36,9 +36,9 @@ jobs:
     steps:
       - checkout
       - run:
-          command: nvm install <<parameters.node-version>>
+          command: nvm install "<<parameters.node-version>>"
       - run:
-          command: nvm use <<parameters.node-version>>
+          command: nvm use "<<parameters.node-version>>"
       - node/install-packages
       - run:
           command: npm run deps:detached && sleep 10
@@ -60,9 +60,9 @@ workflows:
           node-version: "12.18.0"
 
   # FIXME "nvm install lts/*" works locally but does not work on CircleCI
-  # optional-checks:
-  #   jobs:
-  #     - all-tests:
-  #         name: tests-node-lts
-  #         node-version: lts/*
+  optional-checks:
+    jobs:
+      - all-tests:
+          name: tests-node-lts
+          node-version: lts/*
 
