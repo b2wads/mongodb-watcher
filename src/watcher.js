@@ -3,6 +3,10 @@ const AsyncPromisePool = require('async-promise-pool')
 const CollectionObserver = require('./collection-observer')
 const RabbitPublisher = require('./rabbit-publisher')
 
+const eventTransformers = new Map([['delete', (event) => event.documentKey]])
+
+const defaultTransformer = (event) => event.fullDocument
+
 module.exports = class Watcher {
   constructor({
     concurrency,
@@ -31,13 +35,14 @@ module.exports = class Watcher {
 
     const operationHandler = this._handleEvent.bind(this)
     operations.forEach((operation) => {
-      this._observer.on(operation, operationHandler)
+      const transform = eventTransformers.get(operation) || defaultTransformer
+
+      this._observer.on(operation, (eventData) => operationHandler(transform(eventData)))
     })
   }
 
-  _handleEvent(eventData) {
-    // FIXME delete event does not contain field 'fullDocument'
-    this._pool.add(() => this._publisher.publishObject(eventData.fullDocument))
+  _handleEvent(transformedEvent) {
+    this._pool.add(() => this._publisher.publishObject(transformedEvent))
   }
 
   async start() {
