@@ -292,6 +292,10 @@ describe('[INTEGRATION] watcher', () => {
     })
   })
 
+  // TODO test replace operation
+
+  // TODO test invalidate operation
+
   describe('when starting watcher for the first time after events have already occurred', () => {
     const firstDocs = [
       { field1: 'test-1', field2: 'test-2' },
