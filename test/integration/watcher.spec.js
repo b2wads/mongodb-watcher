@@ -190,18 +190,53 @@ describe('[INTEGRATION] watcher', () => {
     })
   })
 
-  // describe('when listening only for delete operations', () => {
-  //   const docFixture = { field1: 'test-1', field2: 'test-2' }
+  describe('when listening only for delete operations', () => {
+    const docFixture = { field1: 'test-1', field2: 'test-2' }
 
-  //   let publishedMsgs
-  //   let savedState
+    let publishedMsgs
+    let savedState
 
-  //   before(async () => {
-  //     const watcher = new Watcher({
+    before(async () => {
+      const watcher = new Watcher({
+        ...defaultWatcherConfig,
+        mongo: {
+          ...defaultWatcherConfig.mongo,
+          operations: ['delete']
+        }
+      })
 
-  //     })
-  //   })
-  // })
+      await watcher.start()
+
+      await mongo.collection.insertOne(docFixture)
+
+      await mongo.collection.deleteOne({ _id: docFixture._id })
+
+      await waitMs(250)
+
+      publishedMsgs = await rabbit.getMessages()
+
+      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+
+      await watcher.stop()
+    })
+
+    it('should correctly publish event to rabbit', () => {
+      expect(publishedMsgs).to.have.lengthOf(1)
+    })
+
+    it('should publish correct data to rabbit', () => {
+      expect(publishedMsgs).to.deep.equal([{
+        _id: docFixture._id.toHexString()
+      }])
+    })
+
+    it('should correctly save observation state', () => {
+      expect(savedState).to.exist
+      expect(savedState).to.have.property('lastObservedId')
+      expect(savedState.lastObservedId.toHexString()).to.be.equal(docFixture._id.toHexString())
+      expect(savedState).to.have.property('resumeToken')
+    })
+  })
 
   describe('when resuming watch after a failure', () => {
     const docFixtures = [
