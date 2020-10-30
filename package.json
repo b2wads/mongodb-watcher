@@ -26,6 +26,7 @@
   },
   "scripts": {
     "deps": "docker-compose up --build --force-recreate",
+    "deps:detached": "docker-compose up --detach --build --force-recreate",
     "eslint": "./node_modules/.bin/eslint --fix .",
     "eslint:check": "./node_modules/.bin/eslint .",
     "fix:<fix-name>": "node scripts/fix-<fix-name>.js",
