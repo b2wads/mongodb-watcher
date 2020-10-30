@@ -289,4 +289,51 @@ describe('[INTEGRATION] watcher', () => {
       )
     })
   })
+
+  describe('when starting watcher for the first time after events have already occurred', () => {
+    const firstDocs = [
+      { field1: 'test-1', field2: 'test-2' },
+      { field1: 'test-3', field2: 'test-4' }
+    ]
+
+    const lastDocs = [
+      { field1: 'test-5', field2: 'test-6' },
+      { field1: 'test-6', field2: 'test-7' }
+    ]
+
+    let publishedMsgs
+
+    before(async () => {
+      const watcher = new Watcher({
+        ...defaultWatcherConfig,
+        concurrency: 2,
+      })
+
+      // documents inserted while watcher has not started
+      await mongo.collection.insertMany(firstDocs)
+
+      await watcher.start()
+
+      await mongo.collection.insertMany(lastDocs)
+
+      await waitMs(250)
+      await watcher.stop()
+
+      publishedMsgs = await rabbit.getMessages()
+    })
+
+    it('should ignore initial events', () => {
+      expect(publishedMsgs).to.have.lengthOf(lastDocs.length)
+    })
+
+    it('should publish correct information to rabbit', () => {
+      expect(publishedMsgs).to.have.deep.members(
+        lastDocs.map((doc) => ({
+          _id: doc._id.toHexString(),
+          field1: doc.field1,
+          field2: doc.field2,
+        }))
+      )
+    })
+  })
 })
