@@ -1,5 +1,4 @@
 const AsyncPromisePool = require('async-promise-pool')
-const { MongoClient } = require('mongodb')
 
 const CollectionObserver = require('./collection-observer')
 const RabbitPublisher = require('./rabbit-publisher')
@@ -14,12 +13,12 @@ module.exports = class Watcher {
 
     this._observer = new CollectionObserver({
       collection,
+      connectionOptions,
       database,
       stateCollection,
-      // FIXME connecting to mongo with useUnifiedTopology: true breaks the changeStream
-      mongoClient: new MongoClient(mongoUri, connectionOptions),
       operations,
       maxEventDuplication: concurrency,
+      uri: mongoUri,
     })
 
     this._pool = new AsyncPromisePool({ concurrency })

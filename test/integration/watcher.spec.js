@@ -197,7 +197,7 @@ describe('[INTEGRATION] watcher', () => {
       { field1: 'test-1', field2: 'test-2' },
       { field1: 'test-3', field2: 'test-4' },
       { field1: 'test-5', field2: 'test-6' },
-      { field1: 'test-6', field2: 'test-7' }
+      { field1: 'test-6', field2: 'test-7' },
     ]
 
     let publishedMsgs

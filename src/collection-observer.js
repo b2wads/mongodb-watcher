@@ -1,6 +1,9 @@
+const { MongoClient } = require('mongodb')
+
 module.exports = class CollectionObserver {
-  constructor({ database, collection, stateCollection, mongoClient, maxEventDuplication }) {
-    this._client = mongoClient
+  constructor({ database, collection, connectionOptions, stateCollection, maxEventDuplication, uri }) {
+    // FIXME using unifiedTopology: true breaks change stream
+    this._client = new MongoClient(uri, connectionOptions)
     this._changeStream = null
     this._collection = null
     this._collectionName = collection
