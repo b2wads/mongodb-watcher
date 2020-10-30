@@ -33,16 +33,16 @@ jobs:
     machine:
       image: ubuntu-2004:202010-01
 
-      steps:
-        - checkout
-        - node/install:
-            node-version: <<parameters.node-version>>
-        - node/install-packages
-        - run:
-            command: npm run deps:detached && sleep 10
-        - run:
-            command: npm run test:coverage-report
-        - upload-coverage-report
+    steps:
+      - checkout
+      - node/install:
+          node-version: <<parameters.node-version>>
+      - node/install-packages
+      - run:
+          command: npm run deps:detached && sleep 10
+      - run:
+          command: npm run test:coverage-report
+      - upload-coverage-report
 
 workflows:
   required-checks:
