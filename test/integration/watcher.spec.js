@@ -60,6 +60,14 @@ describe('[INTEGRATION] watcher', () => {
     await mongo.client.close()
   })
 
+  afterEach(async () => {
+    await Promise.all([
+      mongo.collection.deleteMany({}),
+      mongo.stateCollection.deleteMany({}),
+      rabbit.channel.purgeQueue(rabbit.queue),
+    ])
+  })
+
   describe('when listening only for insert operations', () => {
     const docFixtures = [
       { field1: 'test-1', field2: 'test-2' },
@@ -95,14 +103,6 @@ describe('[INTEGRATION] watcher', () => {
       savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
 
       await watcher.stop()
-    })
-
-    after(async () => {
-      await Promise.all([
-        mongo.collection.deleteMany({}),
-        mongo.stateCollection.deleteMany({}),
-        rabbit.channel.purgeQueue(rabbit.queue),
-      ])
     })
 
     it('should correctly publish all events to rabbit', () => {
@@ -170,14 +170,6 @@ describe('[INTEGRATION] watcher', () => {
       await watcher.stop()
     })
 
-    after(async () => {
-      await Promise.all([
-        mongo.collection.deleteMany({}),
-        mongo.stateCollection.deleteMany({}),
-        rabbit.channel.purgeQueue(rabbit.queue),
-      ])
-    })
-
     it('should only publish update event', () => {
       expect(publishedMsgs).to.have.lengthOf(1)
     })
@@ -197,6 +189,72 @@ describe('[INTEGRATION] watcher', () => {
       expect(savedState).to.have.property('lastObservedId')
       expect(savedState.lastObservedId.toHexString()).to.be.equal(originalFixture._id.toHexString())
       expect(savedState).to.have.property('resumeToken')
+    })
+  })
+
+  describe('when resuming watch after a failure', () => {
+    const docFixtures = [
+      { field1: 'test-1', field2: 'test-2' },
+      { field1: 'test-3', field2: 'test-4' },
+      { field1: 'test-5', field2: 'test-6' },
+      { field1: 'test-6', field2: 'test-7' }
+    ]
+
+    let publishedMsgs
+
+    const watcherConstructorArgs = {
+      concurrency: 2,
+      mongo: {
+        uri: mongo.uri,
+        database: mongo.dbName,
+        collection: mongo.collectionName,
+        stateCollection: mongo.stateCollectionName,
+        operations: ['insert'],
+      },
+      rabbit: {
+        uri: rabbit.uri,
+        exchange: rabbit.exchange,
+      },
+    }
+
+    before(async () => {
+      const watcher = new Watcher(watcherConstructorArgs)
+
+      await watcher.start()
+
+      const firstDocs = docFixtures.slice(0, 2)
+      await mongo.collection.insertMany(firstDocs)
+
+      await waitMs(250)
+      // simulate failure
+      await watcher.stop()
+      watcher._client = new MongoClient({})
+
+      // documents inserted while watcher is down
+      const lastDocs = docFixtures.slice(2, docFixtures.length)
+      await mongo.collection.insertMany(lastDocs)
+
+      // watcher resumes
+      const newWatcher = new Watcher(watcherConstructorArgs)
+      await newWatcher.start()
+      await waitMs(250)
+      await newWatcher.stop()
+
+      publishedMsgs = await rabbit.getMessages()
+    })
+
+    it('should not miss any events', () => {
+      expect(publishedMsgs).to.have.lengthOf(docFixtures.length)
+    })
+
+    it('should publish correct information to rabbit', () => {
+      expect(publishedMsgs).to.have.deep.members(
+        docFixtures.map((doc) => ({
+          _id: doc._id.toHexString(),
+          field1: doc.field1,
+          field2: doc.field2,
+        }))
+      )
     })
   })
 })
