@@ -59,9 +59,10 @@ workflows:
           name: tests-node-12
           node-version: "12.18.0"
 
-  optional-checks:
-    jobs:
-      - all-tests:
-          name: tests-node-lts
-          node-version: "lts/*"
+  # FIXME "nvm install lts/*" works locally but does not work on CircleCI
+  # optional-checks:
+  #   jobs:
+  #     - all-tests:
+  #         name: tests-node-lts
+  #         node-version: lts/*
 
