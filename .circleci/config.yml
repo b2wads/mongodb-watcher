@@ -12,12 +12,12 @@ commands:
 jobs:
   fmt-check:
     parameters:
-      nodeVersionTag:
+      node-version-tag:
         type: string
 
     executor:
       name: node/default
-      tag: <<parameters.nodeVersionTag>>
+      tag: <<parameters.node-version-tag>>
 
     steps:
       - checkout
@@ -49,7 +49,7 @@ workflows:
     jobs:
       - fmt-check:
           name: fmt-check
-          node-version: "12.18.0"
+          node-version-tag: "12.18"
 
       - all-tests:
           name: tests-node-12
