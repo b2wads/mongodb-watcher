@@ -42,7 +42,7 @@ describe('[INTEGRATION] watcher', () => {
     rabbit: {
       uri: rabbit.uri,
       exchange: rabbit.exchange,
-    }
+    },
   }
 
   before(async () => {
@@ -150,7 +150,7 @@ describe('[INTEGRATION] watcher', () => {
         mongo: {
           ...defaultWatcherConfig.mongo,
           operations: ['update'],
-        }
+        },
       })
 
       await watcher.start()
@@ -201,8 +201,8 @@ describe('[INTEGRATION] watcher', () => {
         ...defaultWatcherConfig,
         mongo: {
           ...defaultWatcherConfig.mongo,
-          operations: ['delete']
-        }
+          operations: ['delete'],
+        },
       })
 
       await watcher.start()
@@ -225,9 +225,11 @@ describe('[INTEGRATION] watcher', () => {
     })
 
     it('should publish correct data to rabbit', () => {
-      expect(publishedMsgs).to.deep.equal([{
-        _id: docFixture._id.toHexString()
-      }])
+      expect(publishedMsgs).to.deep.equal([
+        {
+          _id: docFixture._id.toHexString(),
+        },
+      ])
     })
 
     it('should correctly save observation state', () => {
@@ -293,12 +295,12 @@ describe('[INTEGRATION] watcher', () => {
   describe('when starting watcher for the first time after events have already occurred', () => {
     const firstDocs = [
       { field1: 'test-1', field2: 'test-2' },
-      { field1: 'test-3', field2: 'test-4' }
+      { field1: 'test-3', field2: 'test-4' },
     ]
 
     const lastDocs = [
       { field1: 'test-5', field2: 'test-6' },
-      { field1: 'test-6', field2: 'test-7' }
+      { field1: 'test-6', field2: 'test-7' },
     ]
 
     let publishedMsgs
