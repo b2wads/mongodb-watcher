@@ -38,10 +38,12 @@ jobs:
       - run:
           command: nvm install <<parameters.node-version>>
       - run:
-          command: nvm use
+          command: nvm use <<parameters.node-version>>
       - node/install-packages
       - run:
           command: npm run deps:detached && sleep 10
+      - run:
+          command: npm t
       - run:
           command: npm run test:coverage-report
       - upload-coverage-report
@@ -61,5 +63,5 @@ workflows:
     jobs:
       - all-tests:
           name: tests-node-lts
-          node-version: lts
+          node-version: lts/*
 
