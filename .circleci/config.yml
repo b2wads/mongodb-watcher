@@ -51,11 +51,11 @@ workflows:
     jobs:
       - fmt-check:
           name: fmt-check
-          nodeVersionTag: 12.18
+          nodeVersionTag: "12.18"
 
       - all-tests:
           name: tests-node-12
-          nodeVersionTag: 12.18
+          nodeVersionTag: "12.18"
 
   optional-checks:
     jobs:
