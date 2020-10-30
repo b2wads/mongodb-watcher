@@ -36,6 +36,7 @@ module.exports = class Watcher {
   }
 
   _handleEvent(eventData) {
+    // FIXME delete event does not contain field 'fullDocument'
     this._pool.add(() => this._publisher.publishObject(eventData.fullDocument))
   }
 

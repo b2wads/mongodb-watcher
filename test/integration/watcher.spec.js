@@ -235,10 +235,9 @@ describe('[INTEGRATION] watcher', () => {
       await mongo.collection.insertMany(lastDocs)
 
       // watcher resumes
-      const newWatcher = new Watcher(watcherConstructorArgs)
-      await newWatcher.start()
+      await watcher.start()
       await waitMs(250)
-      await newWatcher.stop()
+      await watcher.stop()
 
       publishedMsgs = await rabbit.getMessages()
     })

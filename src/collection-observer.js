@@ -2,8 +2,7 @@ const { MongoClient } = require('mongodb')
 
 module.exports = class CollectionObserver {
   constructor({ database, collection, connectionOptions, stateCollection, maxEventDuplication, uri }) {
-    // FIXME using unifiedTopology: true breaks change stream
-    this._client = new MongoClient(uri, connectionOptions)
+    this._client = null
     this._changeStream = null
     this._collection = null
     this._collectionName = collection
@@ -11,6 +10,11 @@ module.exports = class CollectionObserver {
     this._dbName = database
     this._eventsCount = 0
     this._handlers = new Map()
+    // FIXME using unifiedTopology: true breaks change stream
+    this._mongoConfig = {
+      uri,
+      connectionOptions,
+    }
     this._stateCollection = null
     this._stateCollectionName = stateCollection
     this._saveStateFrequency = maxEventDuplication
@@ -58,6 +62,7 @@ module.exports = class CollectionObserver {
   }
 
   async start() {
+    this._client = new MongoClient(this._mongoConfig.uri, this._mongoConfig.connectionOptions)
     await this._connect()
 
     const resumeAfter = await this._getResumeToken()
@@ -81,9 +86,10 @@ module.exports = class CollectionObserver {
 
   async stop() {
     if (this._changeStream) await this._changeStream.close()
-    if (this._client.isConnected()) await this._client.close()
+    if (this._client) await this._client.close()
 
     this._changeStream = null
+    this._client = null
     this._collection = null
     this._db = null
     this._stateCollection = null
