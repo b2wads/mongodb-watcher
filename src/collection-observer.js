@@ -30,7 +30,8 @@ module.exports = class CollectionObserver {
 
     if (this._stateCollectionName) {
       this._stateCollection = this._db.collection(this._stateCollectionName)
-      await this._stateCollection.ensureIndex('collection', { unique: true })
+
+      await this._stateCollection.createIndex('collection', { unique: true })
     }
 
     this._collection = this._db.collection(this._collectionName)
