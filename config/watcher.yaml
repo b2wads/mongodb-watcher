@@ -1,0 +1,30 @@
+test:
+  concurrency: 1
+
+  mongo:
+    collection: testcollection
+    database: testdatabase
+    operations:
+      - insert
+    stateCollection: observationstates
+    uri: mongodb://localhost:27017/?replicaSet=testReplSet
+
+  rabbit:
+    uri: amqp://localhost:5672
+    exchange: test_exchange
+
+production:
+  concurrency: env:WATCHER_CONCURRENCY
+
+  mongo:
+    collection: env:WATCHER_MONGO_COLLECTION
+    database: env:WATCHER_MONGO_DATABASE
+    operations: env:WATCHER_MONGO_OPERATIONS
+    stateCollection: env:WATCHER_MONGO_STATECOLLECTION
+    uri: env:WATCHER_MONGO_URI
+
+  rabbit:
+    exchange: env:WATCHER_RABBIT_EXCHANGE
+    routingKey: env:WATCHER_RABBIT_ROUTINGKEY
+    uri: env:WATCHER_RABBIT_URI
+

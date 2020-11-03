@@ -10,12 +10,11 @@ const defaultTransformer = (event) => event.fullDocument
 module.exports = class Watcher {
   constructor({
     concurrency,
-    mongo: { database, collection, connectionOptions, stateCollection, operations, uri: mongoUri },
-    rabbit: { uri: rabbitUri, exchange, routingKey },
+    mongo: { collection, database, operations, stateCollection, uri: mongoUri },
+    rabbit: { exchange, routingKey, uri: rabbitUri },
   }) {
     this._observer = new CollectionObserver({
       collection,
-      connectionOptions,
       database,
       stateCollection,
       operations,

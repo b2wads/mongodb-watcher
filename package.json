@@ -2,8 +2,9 @@
   "name": "@b2wads/mongodb-watcher",
   "version": "0.1.0",
   "description": "Watch mongodb change streams and send data to RabbitMQ ",
-  "main": "index.js",
+  "main": "app.js",
   "dependencies": {
+    "@b2wads/env-o-loader": "^1.0.2",
     "@b2wads/logger": "2.0.0",
     "amqplib": "^0.6.0",
     "async-promise-pool": "^1.0.3",
@@ -34,11 +35,9 @@
     "fmt:check": "npm run prettier:check && npm run eslint:check",
     "prettier": "./node_modules/.bin/prettier --write \"**/{*.js,*.json,bin/**}\"",
     "prettier:check": "./node_modules/.bin/prettier --check \"**/{*.js,*.json,bin/**}\"",
-    "test": "./node_modules/.bin/nyc mocha --reporter spec",
-    "test:coverage-report": "nyc report --reporter=text-lcov > coverage.lcov",
-    "test:acceptance": "npm t test/acceptance/*",
-    "test:integration": "npm t test/integration/*",
-    "test:unit": "npm t test/unit/*"
+    "start": "node app.js",
+    "test": "NODE_ENV=test ./node_modules/.bin/nyc mocha --reporter spec",
+    "test:coverage-report": "nyc report --reporter=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
