@@ -1,5 +1,5 @@
 const envLoader = require('@b2wads/env-o-loader')
 
 module.exports = {
-  watcherConfig: envLoader('./watcher.yaml'),
+  watcherConfig: Object.freeze(envLoader('./watcher.yaml')),
 }
