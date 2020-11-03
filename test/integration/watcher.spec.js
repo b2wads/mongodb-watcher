@@ -47,7 +47,10 @@ describe('[INTEGRATION] watcher', () => {
   after(async () => {
     await rabbit.channel.unbindQueue(rabbit.queue, watcherConfig.rabbit.exchange)
 
-    await Promise.all([rabbit.channel.deleteQueue(rabbit.queue), rabbit.channel.deleteExchange(watcherConfig.rabbit.exchange)])
+    await Promise.all([
+      rabbit.channel.deleteQueue(rabbit.queue),
+      rabbit.channel.deleteExchange(watcherConfig.rabbit.exchange),
+    ])
 
     await rabbit.channel.close()
     await rabbit.conn.close()

@@ -21,7 +21,7 @@ const constructorValidator = yup.object({
     exchange: yup.string().required(),
     routingKey: yup.string(),
     uri: yup.string().required(),
-  })
+  }),
 })
 
 module.exports = class Watcher {

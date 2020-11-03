@@ -1,3 +1,7 @@
+/* eslint-disable no-new */
+
+const { expect } = require('chai')
+
 const { Watcher } = require('../../src')
 
 describe('[UNIT] watcher', () => {
@@ -9,7 +13,7 @@ describe('[UNIT] watcher', () => {
         database: 'testdatabase',
         operations: ['insert'],
         stateCollection: 'teststatecollection',
-        uri: 'mongodb://localhost'
+        uri: 'mongodb://localhost',
       },
       rabbit: {
         exchange: 'testexchange',
@@ -67,7 +71,6 @@ describe('[UNIT] watcher', () => {
       it('should throw error describing the problem', () => {
         expect(thrownError.message).to.match(/database .* required/i)
       })
-
     })
 
     describe('missing mongo operations', () => {
@@ -75,7 +78,7 @@ describe('[UNIT] watcher', () => {
         ...baseConfigFixture,
         mongo: {
           ...baseConfigFixture.mongo,
-          operations: []
+          operations: [],
         },
       }
 
@@ -96,7 +99,6 @@ describe('[UNIT] watcher', () => {
       it('should throw error describing the problem', () => {
         expect(thrownError.message).to.match(/operations .* required/i)
       })
-
     })
 
     describe('missing mongo uri', () => {
@@ -149,7 +151,6 @@ describe('[UNIT] watcher', () => {
       it('should throw error describing the problem', () => {
         expect(thrownError.message).to.match(/exchange .* required/i)
       })
-
     })
 
     describe('missing rabbit uri', () => {
@@ -176,7 +177,6 @@ describe('[UNIT] watcher', () => {
       it('should throw error describing the problem', () => {
         expect(thrownError.message).to.match(/rabbit\.uri .* required/i)
       })
-
     })
   })
 })
