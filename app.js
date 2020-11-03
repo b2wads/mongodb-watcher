@@ -1,5 +1,14 @@
-const Watcher = require('./src/watcher')
+const { Watcher } = require('./src')
 
-module.exports = {
-  Watcher,
-}
+const { watcherConfig } = require('./config')
+
+const watcher = new Watcher(watcherConfig)
+
+process.on("SIGINT", async () => {
+  console.error("Received interruption signal, stopping watcher")
+  await watcher.stop()
+})
+
+console.log("Starting watcher with configs:", watcherConfig)
+watcher.start()
+
