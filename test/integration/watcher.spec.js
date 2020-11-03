@@ -80,16 +80,14 @@ describe('[INTEGRATION] watcher', () => {
       })
 
       await watcher.start()
-
       await mongo.collection.insertMany(docFixtures)
-
       await waitMs(250)
+      await watcher.stop()
 
       publishedMsgs = await rabbit.getMessages()
 
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
-      await watcher.stop()
     })
 
     after(async () => {
@@ -140,18 +138,14 @@ describe('[INTEGRATION] watcher', () => {
       })
 
       await watcher.start()
-
       await mongo.collection.insertOne(originalFixture)
-
       await mongo.collection.findOneAndUpdate({ _id: originalFixture._id }, { $set: updateFixture })
-
       await waitMs(250)
+      await watcher.stop()
 
       publishedMsgs = await rabbit.getMessages()
 
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
-
-      await watcher.stop()
     })
 
     after(async () => {
@@ -196,18 +190,14 @@ describe('[INTEGRATION] watcher', () => {
       })
 
       await watcher.start()
-
       await mongo.collection.insertOne(docFixture)
-
       await mongo.collection.deleteOne({ _id: docFixture._id })
-
       await waitMs(250)
+      await watcher.stop()
 
       publishedMsgs = await rabbit.getMessages()
 
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
-
-      await watcher.stop()
     })
 
     after(async () => {
@@ -317,9 +307,7 @@ describe('[INTEGRATION] watcher', () => {
       await mongo.collection.insertMany(firstDocs)
 
       await watcher.start()
-
       await mongo.collection.insertMany(lastDocs)
-
       await waitMs(250)
       await watcher.stop()
 
