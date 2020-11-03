@@ -25,6 +25,13 @@ describe('[INTEGRATION] watcher', () => {
 
   const mongo = {}
 
+  const cleanUp = () =>
+    Promise.all([
+      mongo.collection.deleteMany({}),
+      mongo.stateCollection.deleteMany({}),
+      rabbit.channel.purgeQueue(rabbit.queue),
+    ])
+
   before(async () => {
     rabbit.conn = await amqplib.connect(watcherConfig.rabbit.uri)
     rabbit.channel = await rabbit.conn.createChannel()
@@ -58,14 +65,6 @@ describe('[INTEGRATION] watcher', () => {
     await mongo.client.close()
   })
 
-  afterEach(async () => {
-    await Promise.all([
-      mongo.collection.deleteMany({}),
-      mongo.stateCollection.deleteMany({}),
-      rabbit.channel.purgeQueue(rabbit.queue),
-    ])
-  })
-
   describe('when listening only for insert operations', () => {
     const docFixtures = [
       { field1: 'test-1', field2: 'test-2' },
@@ -91,6 +90,10 @@ describe('[INTEGRATION] watcher', () => {
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
       await watcher.stop()
+    })
+
+    after(async () => {
+      await cleanUp()
     })
 
     it('should correctly publish all events to rabbit', () => {
@@ -151,6 +154,10 @@ describe('[INTEGRATION] watcher', () => {
       await watcher.stop()
     })
 
+    after(async () => {
+      await cleanUp()
+    })
+
     it('should only publish update event', () => {
       expect(publishedMsgs).to.have.lengthOf(1)
     })
@@ -201,6 +208,10 @@ describe('[INTEGRATION] watcher', () => {
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
       await watcher.stop()
+    })
+
+    after(async () => {
+      await cleanUp()
     })
 
     it('should correctly publish event to rabbit', () => {
@@ -260,6 +271,10 @@ describe('[INTEGRATION] watcher', () => {
       publishedMsgs = await rabbit.getMessages()
     })
 
+    after(async () => {
+      await cleanUp()
+    })
+
     it('should not miss any events', () => {
       expect(publishedMsgs).to.have.lengthOf(docFixtures.length)
     })
@@ -309,6 +324,10 @@ describe('[INTEGRATION] watcher', () => {
       await watcher.stop()
 
       publishedMsgs = await rabbit.getMessages()
+    })
+
+    after(async () => {
+      await cleanUp()
     })
 
     it('should ignore initial events', () => {
