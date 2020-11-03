@@ -87,7 +87,6 @@ describe('[INTEGRATION] watcher', () => {
       publishedMsgs = await rabbit.getMessages()
 
       savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
-
     })
 
     after(async () => {
