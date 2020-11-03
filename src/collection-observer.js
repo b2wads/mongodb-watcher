@@ -10,7 +10,6 @@ module.exports = class CollectionObserver {
     this._dbName = database
     this._eventsCount = 0
     this._handlers = new Map()
-    // FIXME using unifiedTopology: true breaks change stream
     this._mongoUri = uri
     this._stateCollection = null
     this._stateCollectionName = stateCollection
@@ -60,7 +59,7 @@ module.exports = class CollectionObserver {
   }
 
   async start() {
-    this._client = new MongoClient(this._mongoUri)
+    this._client = new MongoClient(this._mongoUri, { useUnifiedTopology: true })
     await this._connect()
 
     const resumeAfter = await this._getResumeToken()
