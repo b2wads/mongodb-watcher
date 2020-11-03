@@ -43,7 +43,7 @@ describe('[INTEGRATION] watcher', () => {
 
     await rabbit.channel.bindQueue(rabbit.queue, watcherConfig.rabbit.exchange)
 
-    mongo.client = new MongoClient(watcherConfig.mongo.uri)
+    mongo.client = new MongoClient(watcherConfig.mongo.uri, { useUnifiedTopology: true })
     await mongo.client.connect()
 
     mongo.db = mongo.client.db(watcherConfig.mongo.database)
