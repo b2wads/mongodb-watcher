@@ -1,4 +1,5 @@
 const AsyncPromisePool = require('async-promise-pool')
+const yup = require('yup')
 
 const CollectionObserver = require('./collection-observer')
 const RabbitPublisher = require('./rabbit-publisher')
@@ -7,12 +8,30 @@ const eventTransformers = new Map([['delete', (event) => event.documentKey]])
 
 const defaultTransformer = (event) => event.fullDocument
 
+const constructorValidator = yup.object({
+  concurrency: yup.number().min(1),
+  mongo: yup.object({
+    collection: yup.string().required(),
+    database: yup.string().required(),
+    operations: yup.array().of(yup.string()).required(),
+    stateCollection: yup.string(),
+    uri: yup.string().required(),
+  }),
+  rabbit: yup.object({
+    exchange: yup.string().required(),
+    routingKey: yup.string(),
+    uri: yup.string().required(),
+  })
+})
+
 module.exports = class Watcher {
-  constructor({
-    concurrency,
-    mongo: { collection, database, operations, stateCollection, uri: mongoUri },
-    rabbit: { exchange, routingKey, uri: rabbitUri },
-  }) {
+  constructor(args) {
+    const {
+      concurrency = 10,
+      mongo: { collection, database, operations, stateCollection, uri: mongoUri },
+      rabbit: { exchange, routingKey, uri: rabbitUri },
+    } = constructorValidator.validateSync(args)
+
     this._observer = new CollectionObserver({
       collection,
       database,
