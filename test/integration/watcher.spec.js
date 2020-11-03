@@ -2,15 +2,15 @@ const amqplib = require('amqplib')
 const { expect } = require('chai')
 const { MongoClient } = require('mongodb')
 
-const { Watcher } = require('../../index')
+const { Watcher } = require('../../src')
+
+const { watcherConfig } = require('../../config')
 
 const waitMs = require('../helpers/wait-ms')
 
 describe('[INTEGRATION] watcher', () => {
   const rabbit = {
-    uri: process.env.RABBITMQ_URI || 'amqp://localhost:5672',
     queue: 'test_queue',
-    exchange: 'test_exchange',
 
     async getMessages() {
       const msgs = []
@@ -23,51 +23,31 @@ describe('[INTEGRATION] watcher', () => {
     },
   }
 
-  const mongo = {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/?replicaSet=testReplSet',
-    dbName: 'testdatabase',
-    collectionName: 'testcollection',
-    stateCollectionName: 'observationstates',
-  }
-
-  const defaultWatcherConfig = {
-    concurrency: 1,
-    mongo: {
-      uri: mongo.uri,
-      database: mongo.dbName,
-      collection: mongo.collectionName,
-      stateCollection: mongo.stateCollectionName,
-      operations: ['insert'],
-    },
-    rabbit: {
-      uri: rabbit.uri,
-      exchange: rabbit.exchange,
-    },
-  }
+  const mongo = {}
 
   before(async () => {
-    rabbit.conn = await amqplib.connect(rabbit.uri)
+    rabbit.conn = await amqplib.connect(watcherConfig.rabbit.uri)
     rabbit.channel = await rabbit.conn.createChannel()
 
     await Promise.all([
       rabbit.channel.assertQueue(rabbit.queue),
-      rabbit.channel.assertExchange(rabbit.exchange, 'fanout'),
+      rabbit.channel.assertExchange(watcherConfig.rabbit.exchange, 'fanout'),
     ])
 
-    await rabbit.channel.bindQueue(rabbit.queue, rabbit.exchange)
+    await rabbit.channel.bindQueue(rabbit.queue, watcherConfig.rabbit.exchange)
 
-    mongo.client = new MongoClient(mongo.uri, { useUnifiedTopology: true })
+    mongo.client = new MongoClient(watcherConfig.mongo.uri)
     await mongo.client.connect()
 
-    mongo.db = mongo.client.db(mongo.dbName)
-    mongo.collection = mongo.db.collection(mongo.collectionName)
-    mongo.stateCollection = mongo.db.collection(mongo.stateCollectionName)
+    mongo.db = mongo.client.db(watcherConfig.mongo.database)
+    mongo.collection = mongo.db.collection(watcherConfig.mongo.collection)
+    mongo.stateCollection = mongo.db.collection(watcherConfig.mongo.stateCollection)
   })
 
   after(async () => {
-    await rabbit.channel.unbindQueue(rabbit.queue, rabbit.exchange)
+    await rabbit.channel.unbindQueue(rabbit.queue, watcherConfig.rabbit.exchange)
 
-    await Promise.all([rabbit.channel.deleteQueue(rabbit.queue), rabbit.channel.deleteExchange(rabbit.exchange)])
+    await Promise.all([rabbit.channel.deleteQueue(rabbit.queue), rabbit.channel.deleteExchange(watcherConfig.rabbit.exchange)])
 
     await rabbit.channel.close()
     await rabbit.conn.close()
@@ -93,7 +73,7 @@ describe('[INTEGRATION] watcher', () => {
     let savedState
     before(async () => {
       const watcher = new Watcher({
-        ...defaultWatcherConfig,
+        ...watcherConfig,
         concurrency: docFixtures.length,
       })
 
@@ -105,7 +85,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
       await watcher.stop()
     })
@@ -146,9 +126,9 @@ describe('[INTEGRATION] watcher', () => {
 
     before(async () => {
       const watcher = new Watcher({
-        ...defaultWatcherConfig,
+        ...watcherConfig,
         mongo: {
-          ...defaultWatcherConfig.mongo,
+          ...watcherConfig.mongo,
           operations: ['update'],
         },
       })
@@ -163,7 +143,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
       await watcher.stop()
     })
@@ -198,9 +178,9 @@ describe('[INTEGRATION] watcher', () => {
 
     before(async () => {
       const watcher = new Watcher({
-        ...defaultWatcherConfig,
+        ...watcherConfig,
         mongo: {
-          ...defaultWatcherConfig.mongo,
+          ...watcherConfig.mongo,
           operations: ['delete'],
         },
       })
@@ -215,7 +195,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: mongo.collectionName })
+      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
 
       await watcher.stop()
     })
@@ -252,7 +232,7 @@ describe('[INTEGRATION] watcher', () => {
 
     before(async () => {
       const watcher = new Watcher({
-        ...defaultWatcherConfig,
+        ...watcherConfig,
         concurrency: 2,
       })
 
@@ -311,7 +291,7 @@ describe('[INTEGRATION] watcher', () => {
 
     before(async () => {
       const watcher = new Watcher({
-        ...defaultWatcherConfig,
+        ...watcherConfig,
         concurrency: 2,
       })
 
