@@ -8,27 +8,28 @@ const eventTransformers = new Map([['delete', (event) => event.documentKey]])
 
 const defaultTransformer = (event) => event.fullDocument
 
-const constructorValidator = yup.object({
-  concurrency: yup.number().min(1),
-  mongo: yup.object({
-    collection: yup.string().required(),
-    database: yup.string().required(),
-    observerId: yup.string(),
-    operations: yup.array().of(yup.string()).required(),
-    stateCollection: yup.string(),
-    uri: yup.string().required(),
-  }),
-  rabbit: yup.object({
-    exchange: yup.string().required(),
-    routingKey: yup.string(),
-    uri: yup.string().required(),
-  }),
-})
-.test(
-  'valid-state-persistence-config',
-  'cannot specify state collection without an observer id',
-  ({ mongo }) => mongo.stateCollection && mongo.observerId || !mongo.stateCollection && !mongo.observerId
-)
+const constructorValidator = yup
+  .object({
+    concurrency: yup.number().min(1),
+    mongo: yup.object({
+      collection: yup.string().required(),
+      database: yup.string().required(),
+      observerId: yup.string(),
+      operations: yup.array().of(yup.string()).required(),
+      stateCollection: yup.string(),
+      uri: yup.string().required(),
+    }),
+    rabbit: yup.object({
+      exchange: yup.string().required(),
+      routingKey: yup.string(),
+      uri: yup.string().required(),
+    }),
+  })
+  .test(
+    'valid-state-persistence-config',
+    'cannot specify state collection without an observer id',
+    ({ mongo }) => (mongo.stateCollection && mongo.observerId) || (!mongo.stateCollection && !mongo.observerId)
+  )
 
 module.exports = class Watcher {
   constructor(args) {
