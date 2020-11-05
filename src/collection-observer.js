@@ -60,6 +60,19 @@ module.exports = class CollectionObserver {
     )
   }
 
+  async _processStream(eventData) {
+    await this._saveStateLock
+
+    const operationHandler = this._handlers.get(eventData.operationType)
+
+    if (!operationHandler) return
+
+    this._eventsCount = (this._eventsCount + 1) % this._saveStateFrequency
+    operationHandler(eventData)
+
+    if (this._eventsCount === 0) this._saveStateLock = this._saveState(eventData)
+  }
+
   async start() {
     this._client = new MongoClient(this._mongoUri, { useUnifiedTopology: true })
     await this._connect()
@@ -69,18 +82,7 @@ module.exports = class CollectionObserver {
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     this._changeStream = this._collection.watch({ resumeAfter, fullDocument: 'updateLookup' })
 
-    this._changeStream.on('change', async (eventData) => {
-      await this._saveStateLock
-
-      const operationHandler = this._handlers.get(eventData.operationType)
-
-      if (!operationHandler) return
-
-      this._eventsCount = (this._eventsCount + 1) % this._saveStateFrequency
-      operationHandler(eventData)
-
-      if (this._eventsCount === 0) this._saveStateLock = this._saveState(eventData)
-    })
+    this._changeStream.on('change', this._processStream.bind(this))
   }
 
   async stop() {
