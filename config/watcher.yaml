@@ -7,6 +7,7 @@ test:
     operations:
       - insert
     stateCollection: observationstates
+    observerId: testobserver
     uri: mongodb://localhost:27017/?replicaSet=testReplSet
 
   rabbit:
@@ -21,6 +22,7 @@ production:
     database: env:WATCHER_MONGO_DATABASE
     operations: env:WATCHER_MONGO_OPERATIONS
     stateCollection: env:WATCHER_MONGO_STATECOLLECTION
+    observerId: env:WATCHER_MONGO_OBSERVERID
     uri: env:WATCHER_MONGO_URI
 
   rabbit:

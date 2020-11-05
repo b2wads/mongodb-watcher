@@ -86,7 +86,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
+      savedState = await mongo.stateCollection.findOne({ observerId: watcherConfig.mongo.observerId })
     })
 
     after(async () => {
@@ -109,6 +109,7 @@ describe('[INTEGRATION] watcher', () => {
 
     it('should correctly save observation state', () => {
       expect(savedState).to.exist
+      expect(savedState).to.have.property('collection', watcherConfig.mongo.collection)
       expect(savedState).to.have.property('lastObservedId')
       expect(savedState).to.have.property('resumeToken')
     })
@@ -144,7 +145,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
+      savedState = await mongo.stateCollection.findOne({ observerId: watcherConfig.mongo.observerId })
     })
 
     after(async () => {
@@ -167,6 +168,7 @@ describe('[INTEGRATION] watcher', () => {
 
     it('should correctly save observation state', () => {
       expect(savedState).to.exist
+      expect(savedState).to.have.property('collection', watcherConfig.mongo.collection)
       expect(savedState).to.have.property('lastObservedId')
       expect(savedState.lastObservedId.toHexString()).to.be.equal(originalFixture._id.toHexString())
       expect(savedState).to.have.property('resumeToken')
@@ -196,7 +198,7 @@ describe('[INTEGRATION] watcher', () => {
 
       publishedMsgs = await rabbit.getMessages()
 
-      savedState = await mongo.stateCollection.findOne({ collection: watcherConfig.mongo.collection })
+      savedState = await mongo.stateCollection.findOne({ observerId: watcherConfig.mongo.observerId })
     })
 
     after(async () => {
@@ -217,6 +219,7 @@ describe('[INTEGRATION] watcher', () => {
 
     it('should correctly save observation state', () => {
       expect(savedState).to.exist
+      expect(savedState).to.have.property('collection', watcherConfig.mongo.collection)
       expect(savedState).to.have.property('lastObservedId')
       expect(savedState.lastObservedId.toHexString()).to.be.equal(docFixture._id.toHexString())
       expect(savedState).to.have.property('resumeToken')

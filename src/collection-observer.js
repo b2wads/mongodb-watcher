@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb')
 
 module.exports = class CollectionObserver {
-  constructor({ database, collection, stateCollection, maxEventDuplication, uri }) {
+  constructor({ database, collection, maxEventDuplication, observerId, stateCollection, uri }) {
     this._client = null
     this._changeStream = null
     this._collection = null
@@ -13,6 +13,7 @@ module.exports = class CollectionObserver {
     this._mongoUri = uri
     this._stateCollection = null
     this._stateCollectionName = stateCollection
+    this._observerId = observerId
     this._saveStateFrequency = maxEventDuplication
     this._saveStateLock = new Promise((resolve) => resolve(true))
   }
@@ -30,7 +31,7 @@ module.exports = class CollectionObserver {
     if (this._stateCollectionName) {
       this._stateCollection = this._db.collection(this._stateCollectionName)
 
-      await this._stateCollection.createIndex('collection', { unique: true })
+      await this._stateCollection.createIndex('observerId', { unique: true })
     }
 
     this._collection = this._db.collection(this._collectionName)
@@ -39,7 +40,7 @@ module.exports = class CollectionObserver {
   async _getResumeToken() {
     if (!this._stateCollection) return undefined
 
-    const observationState = await this._stateCollection.findOne({ collection: this._collectionName })
+    const observationState = await this._stateCollection.findOne({ observerId: this._observerId })
 
     return observationState ? observationState.resumeToken : undefined
   }
@@ -48,9 +49,10 @@ module.exports = class CollectionObserver {
     if (!this._stateCollection) return
 
     await this._stateCollection.replaceOne(
-      { collection: this._collectionName },
+      { observerId: this._observerId },
       {
         collection: this._collectionName,
+        observerId: this._observerId,
         lastObservedId: eventData.documentKey._id,
         resumeToken: eventData._id,
       },

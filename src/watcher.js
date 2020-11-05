@@ -13,6 +13,7 @@ const constructorValidator = yup.object({
   mongo: yup.object({
     collection: yup.string().required(),
     database: yup.string().required(),
+    observerId: yup.string(),
     operations: yup.array().of(yup.string()).required(),
     stateCollection: yup.string(),
     uri: yup.string().required(),
@@ -23,21 +24,26 @@ const constructorValidator = yup.object({
     uri: yup.string().required(),
   }),
 })
+.test(
+  'valid-state-persistence-config',
+  'cannot specify state collection without an observer id',
+  ({ mongo }) => mongo.stateCollection && mongo.observerId || !mongo.stateCollection && !mongo.observerId
+)
 
 module.exports = class Watcher {
   constructor(args) {
     const {
       concurrency = 10,
-      mongo: { collection, database, operations, stateCollection, uri: mongoUri },
+      mongo: { collection, database, observerId, operations, stateCollection, uri: mongoUri },
       rabbit: { exchange, routingKey, uri: rabbitUri },
     } = constructorValidator.validateSync(args)
 
     this._observer = new CollectionObserver({
       collection,
       database,
-      stateCollection,
-      operations,
       maxEventDuplication: concurrency,
+      observerId,
+      stateCollection,
       uri: mongoUri,
     })
 

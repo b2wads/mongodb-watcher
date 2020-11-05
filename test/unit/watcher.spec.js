@@ -11,6 +11,7 @@ describe('[UNIT] watcher', () => {
       mongo: {
         collection: 'testcollection',
         database: 'testdatabase',
+        observerId: 'testobserverid',
         operations: ['insert'],
         stateCollection: 'teststatecollection',
         uri: 'mongodb://localhost',
@@ -176,6 +177,32 @@ describe('[UNIT] watcher', () => {
 
       it('should throw error describing the problem', () => {
         expect(thrownError.message).to.match(/rabbit\.uri .* required/i)
+      })
+    })
+
+    describe('specifying state collection without an observer id', () => {
+      const configFixture = {
+        ...baseConfigFixture,
+        mongo: { ...baseConfigFixture.mongo },
+      }
+      delete configFixture.mongo.observerId
+
+      let thrownError
+
+      before(() => {
+        try {
+          new Watcher(configFixture)
+        } catch (err) {
+          thrownError = err
+        }
+      })
+
+      it('should throw an error', () => {
+        expect(thrownError).to.exist
+      })
+
+      it('should throw error describing the problem', () => {
+        expect(thrownError.message).to.match(/cannot specify state collection without an observer id/i)
       })
     })
   })
