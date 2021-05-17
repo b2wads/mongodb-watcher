@@ -1,13 +1,15 @@
-// Express
-const express = require('express')
-const routes = require('./routes')
+/* eslint-disable no-console */
 
-// Init express app
-const app = express()
+const { Watcher } = require('./src')
 
-app.use(express.json())
+const { watcherConfig } = require('./config')
 
-// Routes
-app.use('/', routes)
+const watcher = new Watcher(watcherConfig)
 
-module.exports = app
+process.on('SIGINT', async () => {
+  console.error('Received interruption signal, stopping watcher')
+  await watcher.stop()
+})
+
+console.log('Starting watcher with configs:', watcherConfig)
+watcher.start()
